@@ -10,11 +10,28 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
+  <!-- ADMIN LOGIN MODAL -->
+  <div id="admin-login-modal" class="admin-login-modal">
+    <div class="login-box">
+      <h3><i class="fas fa-crown"></i> Admin Login</h3>
+      <p>Enter password to access admin panel</p>
+      <input type="password" id="admin-password" placeholder="Enter password" autocomplete="off">
+      <div class="login-buttons">
+        <button onclick="adminLogin()" class="login-btn">Login</button>
+        <button onclick="closeLoginModal()" class="cancel-btn">Cancel</button>
+      </div>
+      <p class="login-note">Default password: admin123</p>
+    </div>
+  </div>
+
   <!-- ADMIN PANEL (Hidden by default) -->
   <div id="admin-panel" class="admin-panel">
     <div class="admin-header">
       <h3><i class="fas fa-crown"></i> Admin Panel</h3>
-      <button class="close-admin" onclick="closeAdminPanel()"><i class="fas fa-times"></i></button>
+      <div>
+        <button onclick="logoutAdmin()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        <button class="close-admin" onclick="closeAdminPanel()"><i class="fas fa-times"></i></button>
+      </div>
     </div>
     <div class="admin-content">
       <div class="admin-section">
@@ -66,6 +83,16 @@
           <!-- Products will be listed here -->
         </div>
       </div>
+      
+      <div class="admin-section">
+        <h4>Order Management</h4>
+        <div id="orders-list" class="orders-list">
+          <!-- Orders will be listed here -->
+        </div>
+        <button onclick="loadOrders()" class="admin-btn" style="background: #4CAF50;">
+          <i class="fas fa-sync"></i> Refresh Orders
+        </button>
+      </div>
     </div>
   </div>
 
@@ -74,7 +101,9 @@
     <div class="premium-content">
       <span>✨ Free Insured Shipping (2-4 Days) | All over Pakistan</span>
       <span class="trust-badge"><i class="fas fa-shield-alt"></i> 100% Authentic Luxury Products</span>
-      <button class="admin-access-btn" onclick="openAdminPanel()"><i class="fas fa-user-cog"></i> Admin</button>
+      <span id="admin-status" class="admin-status" style="display: none;">
+        <i class="fas fa-user-shield"></i> Admin Mode
+      </span>
     </div>
   </div>
 
@@ -119,7 +148,9 @@
         </div>
         
         <div class="user-actions">
-          <button class="icon-btn"><i class="fas fa-user"></i></button>
+          <button class="icon-btn" id="admin-login-btn" onclick="openLoginModal()">
+            <i class="fas fa-user"></i>
+          </button>
           <button class="icon-btn cart-toggle" onclick="toggleCart()">
             <i class="fas fa-shopping-bag"></i>
             <span id="cart-count" class="cart-count">0</span>
@@ -395,7 +426,12 @@
               <span>Your payment information is secure and encrypted</span>
             </div>
             
-            <button type="submit" class="checkout-btn">
+            <!-- WhatsApp Order Button -->
+            <button type="button" class="checkout-btn whatsapp-order-btn" onclick="sendOrderViaWhatsApp()">
+              <i class="fab fa-whatsapp"></i> Complete Order via WhatsApp
+            </button>
+            
+            <button type="submit" class="checkout-btn secondary">
               <i class="fas fa-lock"></i> Complete Secure Purchase
             </button>
           </form>
@@ -418,7 +454,7 @@
         <div class="social-icons">
           <a href="#"><i class="fab fa-instagram"></i></a>
           <a href="#"><i class="fab fa-facebook-f"></i></a>
-          <a href="#"><i class="fab fa-whatsapp"></i></a>
+          <a href="https://wa.me/923335622988" target="_blank"><i class="fab fa-whatsapp"></i></a>
           <a href="#"><i class="fab fa-tiktok"></i></a>
         </div>
       </div>
@@ -468,6 +504,11 @@
       </div>
     </div>
   </footer>
+
+  <!-- WhatsApp Floating Button -->
+  <a href="https://wa.me/923335622988?text=Hello%20رنگ%20Luxury%20Store%2C%20I%20have%20a%20question%20about%20your%20products" class="whatsapp-float" target="_blank">
+    <i class="fab fa-whatsapp"></i>
+  </a>
 
   <script src="script.js"></script>
 </body>
