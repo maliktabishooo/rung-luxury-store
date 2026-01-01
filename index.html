@@ -2,71 +2,473 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>RANG | Luxury Fashion & Accessories</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- CSS -->
+  <title>رنگ | Luxury Fashion Store</title>
   <link rel="stylesheet" href="style.css">
-
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
-
 <body>
+  <!-- ADMIN PANEL (Hidden by default) -->
+  <div id="admin-panel" class="admin-panel">
+    <div class="admin-header">
+      <h3><i class="fas fa-crown"></i> Admin Panel</h3>
+      <button class="close-admin" onclick="closeAdminPanel()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="admin-content">
+      <div class="admin-section">
+        <h4>Add New Product</h4>
+        <form id="add-product-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Product Name</label>
+              <input type="text" id="admin-product-name" placeholder="Product Name" required>
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <select id="admin-product-category" required>
+                <option value="watches">Watches</option>
+                <option value="glasses">Glasses</option>
+                <option value="clothes">Clothing</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Price (PKR)</label>
+              <input type="number" id="admin-price-pkr" placeholder="Price in PKR" required>
+            </div>
+            <div class="form-group">
+              <label>Price (GBP)</label>
+              <input type="number" id="admin-price-gbp" placeholder="Price in GBP" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Image URL</label>
+            <input type="text" id="admin-product-image" placeholder="Image URL" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="admin-product-description" placeholder="Product Description" rows="3"></textarea>
+          </div>
+          
+          <button type="submit" class="admin-btn"><i class="fas fa-plus"></i> Add Product</button>
+        </form>
+      </div>
+      
+      <div class="admin-section">
+        <h4>Manage Products</h4>
+        <div id="admin-products-list" class="admin-products-list">
+          <!-- Products will be listed here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREMIUM NOTIFICATION BAR -->
+  <div class="premium-bar">
+    <div class="premium-content">
+      <span>✨ Free Insured Shipping (2-4 Days) | All over Pakistan</span>
+      <span class="trust-badge"><i class="fas fa-shield-alt"></i> 100% Authentic Luxury Products</span>
+      <button class="admin-access-btn" onclick="openAdminPanel()"><i class="fas fa-user-cog"></i> Admin</button>
+    </div>
+  </div>
 
   <!-- HEADER -->
-  <header class="navbar">
-    <div class="logo">
-      ◈ RANG
+  <header class="header">
+    <div class="header-container">
+      <!-- CUSTOM LOGO -->
+      <div class="logo">
+        <div class="logo-icon">
+          <img src="IMG-20260101-WA0005.jpg" alt="رنگ Logo" onerror="this.src='https://via.placeholder.com/60x60/111/D4AF37?text=RANG'">
+        </div>
+        <div class="logo-text-container">
+          <h1 class="logo-text">رنگ</h1>
+          <p class="tagline">Luxury Reimagined</p>
+        </div>
+      </div>
+      
+      <div class="nav-center">
+        <nav class="main-nav">
+          <a href="#" class="nav-link active">Home</a>
+          <a href="#" class="nav-link">Watches</a>
+          <a href="#" class="nav-link">Glasses</a>
+          <a href="#" class="nav-link">Clothing</a>
+          <a href="#" class="nav-link">New Arrivals</a>
+          <a href="#" class="nav-link">Gifts</a>
+        </nav>
+      </div>
+      
+      <div class="header-right">
+        <!-- SEARCH BAR -->
+        <div class="search-container">
+          <div class="search-box">
+            <input type="text" id="search-input" placeholder="Search products...">
+            <button class="search-btn" onclick="searchProducts()"><i class="fas fa-search"></i></button>
+          </div>
+          <div id="search-results" class="search-results"></div>
+        </div>
+        
+        <div class="currency-toggle">
+          <button class="currency-btn active" onclick="switchCurrency('PKR')"><i class="fas fa-rupee-sign"></i> PKR</button>
+          <button class="currency-btn" onclick="switchCurrency('GBP')"><i class="fas fa-pound-sign"></i> GBP</button>
+        </div>
+        
+        <div class="user-actions">
+          <button class="icon-btn"><i class="fas fa-user"></i></button>
+          <button class="icon-btn cart-toggle" onclick="toggleCart()">
+            <i class="fas fa-shopping-bag"></i>
+            <span id="cart-count" class="cart-count">0</span>
+          </button>
+        </div>
+      </div>
     </div>
-
-    <nav>
-      <a href="#">Home</a>
-      <a href="#shop">Shop</a>
-      <a href="#about">About</a>
-      <a href="#contact">Contact</a>
-      <a href="#cart" class="cart-btn">🛒</a>
-    </nav>
+    
+    <div class="contact-info">
+      <span><i class="fas fa-phone-alt"></i> 0333-5622988</span> | 
+      <span><i class="fas fa-phone-alt"></i> 0334-5422018</span> | 
+      <span><i class="fas fa-map-marker-alt"></i> All over Pakistan</span>
+    </div>
   </header>
 
   <!-- HERO SECTION -->
   <section class="hero">
-    <h1>Luxury that Defines You</h1>
-    <p>Premium Glasses, Watches & Fashion</p>
-    <button class="shop-btn">Shop Now</button>
-  </section>
-
-  <!-- SHOP SECTION -->
-  <section id="shop" class="shop">
-    <h2>Our Collection</h2>
-    <div class="products" id="product-list">
-      <!-- Products will load here -->
+    <div class="hero-overlay">
+      <div class="hero-content">
+        <h2 class="hero-title">Elevated Fashion Experience</h2>
+        <p class="hero-subtitle">Discover curated luxury collections for the modern connoisseur</p>
+        <a href="#product-list" class="hero-btn">Explore Collection</a>
+      </div>
+      <div class="hero-badges">
+        <div class="badge"><i class="fas fa-award"></i> Authenticity Guaranteed</div>
+        <div class="badge"><i class="fas fa-shipping-fast"></i> Free Shipping (2-4 Days)</div>
+        <div class="badge"><i class="fas fa-lock"></i> Secure Payment</div>
+      </div>
     </div>
   </section>
 
-  <!-- ABOUT -->
-  <section id="about" class="about">
-    <h2>About RANG</h2>
-    <p>
-      RANG represents elegance, identity, and timeless luxury.
-      Designed for those who value premium quality and refined style.
-    </p>
+  <!-- ABOUT SECTION -->
+  <section class="about">
+    <div class="about-container">
+      <h2 class="section-title">The <span class="gold-text">رنگ</span> Experience</h2>
+      <div class="about-content">
+        <div class="about-text">
+          <p>
+            At <strong class="gold-text">رنگ</strong>, we curate exclusive fashion collections that redefine luxury for Pakistan's discerning elite. Each piece in our collection is selected for its exceptional craftsmanship, innovative design, and timeless elegance.
+          </p>
+          <p>
+            From limited-edition timepieces to haute couture and bespoke eyewear, we offer an unparalleled shopping experience that reflects your sophisticated taste. Our commitment extends beyond sales — we provide personalized consultations and exclusive access to collections.
+          </p>
+        </div>
+        <div class="about-stats">
+          <div class="stat">
+            <span class="stat-number">200+</span>
+            <span class="stat-label">Exclusive Designs</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">10K+</span>
+            <span class="stat-label">Satisfied Clients</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">1</span>
+            <span class="stat-label">Showroom (Islamabad)</span>
+          </div>
+        </div>
+      </div>
+      <div class="brand-logos">
+        <div class="brand-logo">LUXURY</div>
+        <div class="brand-logo">PREMIUM</div>
+        <div class="brand-logo">EXCLUSIVE</div>
+        <div class="brand-logo">DESIGNER</div>
+        <div class="brand-logo">COUTURE</div>
+      </div>
+    </div>
   </section>
 
-  <!-- CONTACT -->
-  <section id="contact" class="contact">
-    <h2>Contact Us</h2>
-    <p>WhatsApp: +923335622988</p>
-     <p>WhatsApp: +923361569949</p>
+  <!-- PRODUCT LIST -->
+  <section id="product-list" class="products">
+    <div class="section-header">
+      <h2 class="section-title">Curated Luxury Collection</h2>
+      <p class="section-subtitle">Exclusive pieces for the discerning individual</p>
+    </div>
+    <div class="product-filters">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="watches">Watches</button>
+      <button class="filter-btn" data-filter="glasses">Glasses</button>
+      <button class="filter-btn" data-filter="clothes">Clothing</button>
+    </div>
+    <div class="products-container"></div>
   </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="testimonials">
+    <h2 class="section-title">Client Experiences</h2>
+    <div class="testimonial-container">
+      <div class="testimonial">
+        <div class="testimonial-content">
+          <p>"رنگ transformed my luxury shopping experience. The attention to detail and authentic products are unmatched."</p>
+        </div>
+        <div class="testimonial-author">
+          <div class="author-name">Ali Raza</div>
+          <div class="author-title">Karachi</div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="testimonial-content">
+          <p>"Finally, a fashion store that understands the Pakistani market. Their collection and service are world-class."</p>
+        </div>
+        <div class="testimonial-author">
+          <div class="author-name">Fatima Shah</div>
+          <div class="author-title">Lahore</div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="testimonial-content">
+          <p>"The personalized service and exclusive products make رنگ my only destination for luxury shopping in Pakistan."</p>
+        </div>
+        <div class="testimonial-author">
+          <div class="author-name">Ahmed Khan</div>
+          <div class="author-title">Islamabad</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CART / CHECKOUT -->
+  <div id="cart-overlay" class="cart-overlay"></div>
+  <div id="cart-container" class="cart-container">
+    <div class="cart-header">
+      <h2><i class="fas fa-shopping-bag"></i> Your Luxury Cart</h2>
+      <button class="close-cart" onclick="toggleCart()"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="cart-body">
+      <div id="cart-items" class="cart-items">
+        <div class="empty-cart">
+          <i class="fas fa-shopping-bag"></i>
+          <p>Your luxury cart is empty</p>
+          <p class="empty-cart-sub">Add exclusive items to begin</p>
+        </div>
+      </div>
+      
+      <div class="cart-summary">
+        <h3>Order Summary</h3>
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span id="subtotal-price">Rs 0.00</span>
+        </div>
+        <div class="summary-row">
+          <span>Shipping</span>
+          <span class="free-shipping">FREE (2-4 Days)</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span id="total-price">Rs 0.00</span>
+        </div>
+        
+        <div class="checkout-section">
+          <h3>Checkout</h3>
+          <form id="checkout-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Email or mobile phone number</label>
+                <input type="text" id="contact" placeholder="Email or phone" required>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>First Name</label>
+                <input type="text" id="first-name" placeholder="First Name" required>
+              </div>
+              <div class="form-group">
+                <label>Last Name</label>
+                <input type="text" id="last-name" placeholder="Last Name" required>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Complete Address</label>
+              <textarea id="address" placeholder="House #, Street, Area" rows="2" required></textarea>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>City</label>
+                <input type="text" id="city" placeholder="Enter your city" required>
+              </div>
+              <div class="form-group">
+                <label>Postal code (optional)</label>
+                <input type="text" id="postal" placeholder="Postal Code">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="text" id="phone" placeholder="03XX-XXXXXXX" required>
+            </div>
+            
+            <div class="form-group">
+              <label>Shipping Method</label>
+              <div class="shipping-option selected">
+                <i class="fas fa-truck"></i>
+                <div>
+                  <strong>Free Insured Shipping</strong>
+                  <p>Delivery in 2-4 business days • All over Pakistan</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Payment Method</label>
+              <div class="payment-options">
+                <div class="payment-option selected">
+                  <input type="radio" id="card" name="payment" value="card" checked>
+                  <label for="card">
+                    <div class="payment-icon">
+                      <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div class="payment-details">
+                      <strong>Credit/Debit Card</strong>
+                      <p>VISA, MasterCard, AMEX</p>
+                    </div>
+                  </label>
+                </div>
+                
+                <div class="payment-option">
+                  <input type="radio" id="cod" name="payment" value="cod">
+                  <label for="cod">
+                    <div class="payment-icon">
+                      <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="payment-details">
+                      <strong>Cash on Delivery</strong>
+                      <p>Pay when you receive</p>
+                    </div>
+                  </label>
+                </div>
+                
+                <div class="payment-option">
+                  <input type="radio" id="bank" name="payment" value="bank">
+                  <label for="bank">
+                    <div class="payment-icon">
+                      <i class="fas fa-university"></i>
+                    </div>
+                    <div class="payment-details">
+                      <strong>Bank Transfer</strong>
+                      <p>Direct bank deposit</p>
+                    </div>
+                  </label>
+                </div>
+                
+                <div class="payment-option">
+                  <input type="radio" id="jazzcash" name="payment" value="jazzcash">
+                  <label for="jazzcash">
+                    <div class="payment-icon">
+                      <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="payment-details">
+                      <strong>JazzCash</strong>
+                      <p>Mobile wallet payment</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="same-address" checked>
+              <label for="same-address">Use shipping address as billing address</label>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="terms" required>
+              <label for="terms">I agree to the <a href="#" class="terms-link">Terms & Conditions</a> and <a href="#" class="terms-link">Privacy Policy</a></label>
+            </div>
+            
+            <div class="security-note">
+              <i class="fas fa-lock"></i>
+              <span>Your payment information is secure and encrypted</span>
+            </div>
+            
+            <button type="submit" class="checkout-btn">
+              <i class="fas fa-lock"></i> Complete Secure Purchase
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- FOOTER -->
-  <footer>
-    © 2026 RANG. All Rights Reserved.
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <div class="footer-logo">
+          <div class="logo-icon small">
+            <img src="IMG-20260101-WA0005.jpg" alt="رنگ Logo" onerror="this.src='https://via.placeholder.com/40x40/111/D4AF37?text=RANG'">
+          </div>
+          <h3 class="logo-text">رنگ</h3>
+        </div>
+        <p class="footer-tagline">Pakistan's Premier Luxury Destination</p>
+        <div class="social-icons">
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-whatsapp"></i></a>
+          <a href="#"><i class="fab fa-tiktok"></i></a>
+        </div>
+      </div>
+      
+      <div class="footer-section">
+        <h4>Quick Links</h4>
+        <a href="#">New Arrivals</a>
+        <a href="#">Best Sellers</a>
+        <a href="#">Limited Editions</a>
+        <a href="#">Gift Cards</a>
+        <a href="#">Size Guide</a>
+      </div>
+      
+      <div class="footer-section">
+        <h4>Customer Service</h4>
+        <a href="#">Contact Us</a>
+        <a href="#">Shipping & Returns</a>
+        <a href="#">Authenticity Guarantee</a>
+        <a href="#">Track Order</a>
+        <a href="#">FAQs</a>
+      </div>
+      
+      <div class="footer-section">
+        <h4>Store Location</h4>
+        <div class="location">
+          <strong><i class="fas fa-store"></i> Showroom</strong>
+          <p>Islamabad, Pakistan</p>
+          <p class="location-note">Online orders delivered all over Pakistan</p>
+        </div>
+        <div class="business-hours">
+          <strong><i class="fas fa-clock"></i> Business Hours</strong>
+          <p>Mon-Sat: 10AM - 8PM</p>
+          <p>Sun: 12PM - 6PM</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>© 2023 رنگ Luxury Store. All rights reserved. | Luxury goods are exclusively for personal use.</p>
+      <div class="payment-methods">
+        <i class="fab fa-cc-visa"></i>
+        <i class="fab fa-cc-mastercard"></i>
+        <i class="fab fa-cc-amex"></i>
+        <i class="fas fa-university"></i>
+        <i class="fas fa-money-bill-wave"></i>
+        <i class="fas fa-mobile-alt"></i>
+      </div>
+    </div>
   </footer>
 
-  <script src="products.js"></script>
   <script src="script.js"></script>
-
 </body>
 </html>
