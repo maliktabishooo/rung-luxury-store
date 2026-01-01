@@ -1,3 +1,7 @@
+// ADMIN CREDENTIALS
+const ADMIN_PASSWORD = "admin123";
+const ADMIN_PASSWORD_KEY = "rang_admin_logged_in";
+
 // PRODUCTS ARRAY - Load from localStorage or use default
 let products = JSON.parse(localStorage.getItem('rang_products')) || [
   { 
@@ -58,6 +62,7 @@ let products = JSON.parse(localStorage.getItem('rang_products')) || [
 
 let cart = JSON.parse(localStorage.getItem('rang_cart')) || [];
 let currency = "PKR";
+let isAdminLoggedIn = localStorage.getItem(ADMIN_PASSWORD_KEY) === "true";
 
 // DOM Elements
 const productList = document.querySelector(".products-container");
@@ -65,7 +70,12 @@ const cartCount = document.getElementById("cart-count");
 const cartContainer = document.getElementById("cart-container");
 const cartOverlay = document.getElementById("cart-overlay");
 const adminPanel = document.getElementById("admin-panel");
+const adminLoginModal = document.getElementById("admin-login-modal");
 const searchInput = document.getElementById("search-input");
+const adminStatus = document.getElementById("admin-status");
+
+// WhatsApp Business Number
+const WHATSAPP_NUMBER = "923335622988";
 
 // Initialize the page
 document.addEventListener("DOMContentLoaded", function() {
@@ -73,6 +83,7 @@ document.addEventListener("DOMContentLoaded", function() {
   renderProducts();
   setupEventListeners();
   renderAdminProducts();
+  updateAdminUI();
   
   // Set initial active filter
   document.querySelector(".filter-btn.active").click();
@@ -139,6 +150,8 @@ function setupEventListeners() {
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
       closeCart();
+      closeAdminPanel();
+      closeLoginModal();
     }
   });
   
@@ -174,8 +187,87 @@ function setupEventListeners() {
   // Admin form submission
   document.getElementById("add-product-form").addEventListener("submit", function(e) {
     e.preventDefault();
-    addNewProduct();
+    if (isAdminLoggedIn) {
+      addNewProduct();
+    } else {
+      alert("Please login as admin first!");
+      openLoginModal();
+    }
   });
+  
+  // Admin password input enter key
+  document.getElementById("admin-password")?.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+      adminLogin();
+    }
+  });
+}
+
+// ADMIN FUNCTIONS
+function openLoginModal() {
+  adminLoginModal.classList.add("show");
+  document.getElementById("admin-password").focus();
+}
+
+function closeLoginModal() {
+  adminLoginModal.classList.remove("show");
+  document.getElementById("admin-password").value = "";
+}
+
+function adminLogin() {
+  const password = document.getElementById("admin-password").value;
+  
+  if (password === ADMIN_PASSWORD) {
+    isAdminLoggedIn = true;
+    localStorage.setItem(ADMIN_PASSWORD_KEY, "true");
+    updateAdminUI();
+    closeLoginModal();
+    openAdminPanel();
+    showNotification("Admin login successful!", "success");
+  } else {
+    showNotification("Incorrect password!", "error");
+    document.getElementById("admin-password").value = "";
+    document.getElementById("admin-password").focus();
+  }
+}
+
+function logoutAdmin() {
+  isAdminLoggedIn = false;
+  localStorage.removeItem(ADMIN_PASSWORD_KEY);
+  updateAdminUI();
+  closeAdminPanel();
+  showNotification("Logged out successfully", "success");
+}
+
+function updateAdminUI() {
+  const adminLoginBtn = document.getElementById("admin-login-btn");
+  
+  if (isAdminLoggedIn) {
+    adminStatus.style.display = "flex";
+    adminLoginBtn.innerHTML = '<i class="fas fa-user-shield"></i>';
+    adminLoginBtn.style.color = "#D4AF37";
+    adminLoginBtn.onclick = function() { openAdminPanel(); };
+  } else {
+    adminStatus.style.display = "none";
+    adminLoginBtn.innerHTML = '<i class="fas fa-user"></i>';
+    adminLoginBtn.style.color = "#ccc";
+    adminLoginBtn.onclick = function() { openLoginModal(); };
+  }
+}
+
+function openAdminPanel() {
+  if (!isAdminLoggedIn) {
+    openLoginModal();
+    return;
+  }
+  adminPanel.classList.add("show");
+  document.body.style.overflow = "hidden";
+  loadOrders();
+}
+
+function closeAdminPanel() {
+  adminPanel.classList.remove("show");
+  document.body.style.overflow = "auto";
 }
 
 // Search products
@@ -190,7 +282,7 @@ function searchProducts(query = null) {
   const results = products.filter(product => 
     product.name.toLowerCase().includes(searchQuery) ||
     product.category.toLowerCase().includes(searchQuery) ||
-    product.description.toLowerCase().includes(searchQuery)
+    (product.description && product.description.toLowerCase().includes(searchQuery))
   );
   
   displaySearchResults(results);
@@ -413,24 +505,144 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// WhatsApp Order Function - FIXED VERSION
+function sendOrderViaWhatsApp() {
+  if (cart.length === 0) {
+    alert("Your cart is empty! Add some luxury items before checking out.");
+    return;
+  }
+  
+  if (!document.getElementById("terms").checked) {
+    alert("Please agree to the Terms & Conditions and Privacy Policy to proceed.");
+    return;
+  }
+  
+  // Collect form data
+  const firstName = document.getElementById("first-name").value.trim();
+  const lastName = document.getElementById("last-name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
+  const city = document.getElementById("city").value.trim();
+  const postal = document.getElementById("postal").value.trim();
+  const contact = document.getElementById("contact").value.trim();
+  
+  // Validate required fields
+  if (!firstName || !lastName || !phone || !address || !city) {
+    alert("Please fill in all required fields: First Name, Last Name, Phone, Address, and City.");
+    return;
+  }
+  
+  // Validate phone number (Pakistani format)
+  const phoneRegex = /^03[0-9]{9}$/;
+  if (!phoneRegex.test(phone.replace(/-/g, ''))) {
+    alert("Please enter a valid Pakistani phone number (e.g., 03XXXXXXXXX)");
+    return;
+  }
+  
+  // Calculate total
+  let subtotal = cart.reduce((sum, item) => sum + (currency === "PKR" ? item.pricePKR : item.priceGBP) * item.quantity, 0);
+  const total = subtotal; // Free shipping
+  
+  // Build order items string
+  let itemsString = "";
+  cart.forEach((item, index) => {
+    itemsString += `➤ ${item.quantity}x ${item.name} - ${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? item.pricePKR.toLocaleString() : item.priceGBP.toFixed(2)} each\n`;
+  });
+  
+  // Build WhatsApp message
+  const orderId = "RANG" + Date.now().toString().substr(-6);
+  const message = `🛍️ *NEW ORDER - رنگ Luxury Store*\n\n` +
+                  `*Order ID:* ${orderId}\n` +
+                  `*Date:* ${new Date().toLocaleString()}\n\n` +
+                  `*👤 Customer Details:*\n` +
+                  `Name: ${firstName} ${lastName}\n` +
+                  `Phone: ${phone}\n` +
+                  `Email/Contact: ${contact || "Not provided"}\n` +
+                  `Address: ${address}\n` +
+                  `City: ${city}${postal ? ` (${postal})` : ''}\n\n` +
+                  `*🛒 Order Items:*\n${itemsString}\n` +
+                  `*💰 Order Summary:*\n` +
+                  `Subtotal: ${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? subtotal.toLocaleString() : subtotal.toFixed(2)}\n` +
+                  `Shipping: FREE (2-4 Days)\n` +
+                  `*Total: ${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? total.toLocaleString() : total.toFixed(2)}*\n\n` +
+                  `*Payment Method:* Customer will confirm via WhatsApp\n` +
+                  `*Delivery:* All over Pakistan\n\n` +
+                  `_This order was placed via رنگ Luxury Website_`;
+  
+  // Encode message for URL - PROPERLY encoded
+  const encodedMessage = encodeURIComponent(message);
+  
+  // Create WhatsApp URL - FIXED FORMAT
+  const whatsappURL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
+  
+  // Save order to localStorage before redirecting
+  const orderData = {
+    id: orderId,
+    timestamp: new Date().toISOString(),
+    customer: { firstName, lastName, phone, contact, address, city, postal },
+    items: cart.map(item => ({ 
+      name: item.name, 
+      quantity: item.quantity, 
+      price: currency === "PKR" ? item.pricePKR : item.priceGBP 
+    })),
+    total: total,
+    currency: currency,
+    status: "pending"
+  };
+  
+  // Save to localStorage
+  saveOrderToStorage(orderData);
+  
+  // Show confirmation before redirecting
+  const confirmRedirect = confirm(
+    `Your order (${orderId}) is ready to be sent via WhatsApp.\n\n` +
+    `Click OK to open WhatsApp and send this order to +${WHATSAPP_NUMBER}.\n\n` +
+    `After sending, our team will contact you for payment confirmation.`
+  );
+  
+  if (confirmRedirect) {
+    // Clear cart
+    cart = [];
+    renderCart();
+    updateCartCount();
+    saveCartToStorage();
+    
+    // Reset form
+    document.getElementById("checkout-form").reset();
+    
+    // Close cart
+    closeCart();
+    
+    // Open WhatsApp in new tab - THIS IS THE FIX
+    window.open(whatsappURL, '_blank', 'noopener,noreferrer');
+    
+    // Show thank you message
+    setTimeout(() => {
+      alert(`Thank you for your order! Order ID: ${orderId}\n\nOur team will contact you within 1 hour to confirm your order.`);
+    }, 1000);
+  }
+}
+
+// Function to save orders to localStorage
+function saveOrderToStorage(order) {
+  const orders = JSON.parse(localStorage.getItem('rang_orders')) || [];
+  orders.push(order);
+  localStorage.setItem('rang_orders', JSON.stringify(orders));
+}
+
 // Admin Panel Functions
-function openAdminPanel() {
-  adminPanel.classList.add("show");
-  document.body.style.overflow = "hidden";
-}
-
-function closeAdminPanel() {
-  adminPanel.classList.remove("show");
-  document.body.style.overflow = "auto";
-}
-
 function addNewProduct() {
-  const name = document.getElementById("admin-product-name").value;
+  const name = document.getElementById("admin-product-name").value.trim();
   const category = document.getElementById("admin-product-category").value;
   const pricePKR = parseInt(document.getElementById("admin-price-pkr").value);
   const priceGBP = parseInt(document.getElementById("admin-price-gbp").value);
-  const image = document.getElementById("admin-product-image").value;
-  const description = document.getElementById("admin-product-description").value;
+  const image = document.getElementById("admin-product-image").value.trim();
+  const description = document.getElementById("admin-product-description").value.trim();
+  
+  if (!name || !image || isNaN(pricePKR) || isNaN(priceGBP)) {
+    showNotification("Please fill all required fields with valid data!", "error");
+    return;
+  }
   
   // Generate new ID
   const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
@@ -456,23 +668,32 @@ function addNewProduct() {
   // Reset form
   document.getElementById("add-product-form").reset();
   
-  showAddedToCartNotification("Product added successfully!");
+  showNotification("Product added successfully!", "success");
 }
 
 function removeProduct(id) {
-  products = products.filter(product => product.id !== id);
-  saveProductsToStorage();
-  renderAdminProducts();
+  if (!isAdminLoggedIn) {
+    showNotification("Please login as admin first!", "error");
+    return;
+  }
   
-  // Update the main product display
-  const activeFilter = document.querySelector(".filter-btn.active").dataset.filter;
-  renderProducts(activeFilter);
-  
-  // Also remove from cart if present
-  cart = cart.filter(item => item.id !== id);
-  saveCartToStorage();
-  renderCart();
-  updateCartCount();
+  if (confirm("Are you sure you want to delete this product?")) {
+    products = products.filter(product => product.id !== id);
+    saveProductsToStorage();
+    renderAdminProducts();
+    
+    // Update the main product display
+    const activeFilter = document.querySelector(".filter-btn.active").dataset.filter;
+    renderProducts(activeFilter);
+    
+    // Also remove from cart if present
+    cart = cart.filter(item => item.id !== id);
+    saveCartToStorage();
+    renderCart();
+    updateCartCount();
+    
+    showNotification("Product removed successfully!", "success");
+  }
 }
 
 function renderAdminProducts() {
@@ -496,6 +717,133 @@ function renderAdminProducts() {
     `;
     adminProductsList.appendChild(productItem);
   });
+}
+
+// Order Management Functions
+function loadOrders() {
+  const orders = JSON.parse(localStorage.getItem('rang_orders')) || [];
+  const ordersList = document.getElementById('orders-list');
+  
+  ordersList.innerHTML = '';
+  
+  if (orders.length === 0) {
+    ordersList.innerHTML = '<p class="no-results">No orders yet</p>';
+    return;
+  }
+  
+  // Sort by date (newest first)
+  orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  
+  orders.forEach(order => {
+    const orderItem = document.createElement('div');
+    orderItem.className = 'admin-order-item';
+    
+    const itemsList = order.items.map(item => 
+      `${item.quantity}x ${item.name}`
+    ).join(', ');
+    
+    orderItem.innerHTML = `
+      <div class="order-header">
+        <strong>Order: ${order.id}</strong>
+        <span class="order-date">${new Date(order.timestamp).toLocaleDateString()}</span>
+      </div>
+      <div class="order-details">
+        <p><strong>Customer:</strong> ${order.customer.firstName} ${order.customer.lastName}</p>
+        <p><strong>Phone:</strong> ${order.customer.phone}</p>
+        <p><strong>Items:</strong> ${itemsList}</p>
+        <p><strong>Total:</strong> ${order.currency === 'PKR' ? 'Rs ' : '£'}${order.total.toLocaleString()}</p>
+        <p><strong>Status:</strong> 
+          <select class="order-status" data-order-id="${order.id}" onchange="updateOrderStatus('${order.id}', this.value)">
+            <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+            <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+            <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Processing</option>
+            <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Shipped</option>
+            <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+            <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+          </select>
+        </p>
+      </div>
+      <div class="order-actions">
+        <button onclick="viewOrderDetails('${order.id}')" class="order-action-btn">
+          <i class="fas fa-eye"></i> View
+        </button>
+        <button onclick="contactCustomer('${order.customer.phone}')" class="order-action-btn" style="background: #25D366;">
+          <i class="fab fa-whatsapp"></i> WhatsApp
+        </button>
+        <button onclick="deleteOrder('${order.id}')" class="order-action-btn" style="background: #f44336;">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      </div>
+    `;
+    
+    ordersList.appendChild(orderItem);
+  });
+}
+
+function updateOrderStatus(orderId, newStatus) {
+  const orders = JSON.parse(localStorage.getItem('rang_orders')) || [];
+  const orderIndex = orders.findIndex(order => order.id === orderId);
+  
+  if (orderIndex !== -1) {
+    orders[orderIndex].status = newStatus;
+    localStorage.setItem('rang_orders', JSON.stringify(orders));
+    showNotification(`Order ${orderId} status updated to ${newStatus}`, "success");
+  }
+}
+
+function viewOrderDetails(orderId) {
+  const orders = JSON.parse(localStorage.getItem('rang_orders')) || [];
+  const order = orders.find(order => order.id === orderId);
+  
+  if (order) {
+    let itemsDetails = order.items.map(item => 
+      `${item.quantity}x ${item.name} - ${order.currency === 'PKR' ? 'Rs ' : '£'}${item.price} each`
+    ).join('\n');
+    
+    const orderDetails = `
+Order ID: ${order.id}
+Date: ${new Date(order.timestamp).toLocaleString()}
+Status: ${order.status}
+
+Customer Details:
+Name: ${order.customer.firstName} ${order.customer.lastName}
+Phone: ${order.customer.phone}
+Email: ${order.customer.contact}
+Address: ${order.customer.address}
+City: ${order.customer.city} ${order.customer.postal ? `(${order.customer.postal})` : ''}
+
+Order Items:
+${itemsDetails}
+
+Total: ${order.currency === 'PKR' ? 'Rs ' : '£'}${order.total}
+    `;
+    
+    alert(orderDetails);
+  }
+}
+
+function contactCustomer(phoneNumber) {
+  // Create proper WhatsApp URL for customer contact
+  const message = encodeURIComponent("Hello from رنگ Luxury Store! Regarding your order...");
+  const whatsappURL = `https://wa.me/${phoneNumber}?text=${message}`;
+  
+  // Open in new tab
+  window.open(whatsappURL, '_blank', 'noopener,noreferrer');
+}
+
+function deleteOrder(orderId) {
+  if (!isAdminLoggedIn) {
+    showNotification("Please login as admin first!", "error");
+    return;
+  }
+  
+  if (confirm(`Are you sure you want to delete order ${orderId}?`)) {
+    let orders = JSON.parse(localStorage.getItem('rang_orders')) || [];
+    orders = orders.filter(order => order.id !== orderId);
+    localStorage.setItem('rang_orders', JSON.stringify(orders));
+    loadOrders();
+    showNotification(`Order ${orderId} deleted`, "success");
+  }
 }
 
 function handleCheckout(e) {
@@ -541,9 +889,6 @@ function handleCheckout(e) {
   formData.shippingCost = 0;
   formData.total += formData.shippingCost;
   
-  // In a real application, you would send this data to a server
-  console.log("Order submitted:", formData);
-  
   // Show success message
   const orderId = "RANG" + Date.now().toString().substr(-8);
   const paymentMethods = {
@@ -562,4 +907,33 @@ function handleCheckout(e) {
   saveCartToStorage();
   e.target.reset();
   closeCart();
+}
+
+// Notification function
+function showNotification(message, type = "success") {
+  const notification = document.createElement('div');
+  const bgColor = type === "success" ? "#25D366" : type === "error" ? "#f44336" : "#D4AF37";
+  
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${bgColor};
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+  `;
+  
+  notification.innerHTML = `<i class="fas fa-${type === "success" ? "check-circle" : "exclamation-circle"}"></i> ${message}`;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
 }
