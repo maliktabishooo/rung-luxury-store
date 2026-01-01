@@ -1,70 +1,48 @@
-// ADMIN CREDENTIALS
-const ADMIN_PASSWORD = "admin123";
+// ==================== CONFIGURATION ====================
+const ADMIN_EMAIL_1 = "malikkashan530@gmail.com";
+const ADMIN_EMAIL_2 = "maliktabish530@gmail.com";
+const WHATSAPP_NUMBER = "923335622988";
+
+// Secure admin password (hashed in production)
+const ADMIN_PASSWORD_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"; // "admin" hashed with SHA-256
 const ADMIN_PASSWORD_KEY = "rang_admin_logged_in";
 
-// PRODUCTS ARRAY - Load from localStorage or use default
+// ==================== PRODUCT DATA ====================
 let products = JSON.parse(localStorage.getItem('rang_products')) || [
   { 
     id: 1, 
     name: "Designer Luxury Sunglasses", 
-    pricePKR: 45000, 
-    priceGBP: 180, 
-    image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", 
+    pricePKR: 4500, 
+    priceGBP: 18, 
+    image: "./glasses.jpg", 
     category: "glasses",
     description: "Premium designer sunglasses with UV protection"
   },
   { 
     id: 2, 
-    name: "Luxury Chronograph Watch", 
-    pricePKR: 120000, 
-    priceGBP: 480, 
-    image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", 
+    name: "Premium Chronograph Watch", 
+    pricePKR: 12000, 
+    priceGBP: 48, 
+    image: "./watch.jpg", 
     category: "watches",
-    description: "Exclusive luxury timepiece with genuine leather strap"
+    description: "Luxury timepiece with genuine leather strap"
   },
   { 
     id: 3, 
-    name: "Designer Formal Suit", 
-    pricePKR: 85000, 
-    priceGBP: 340, 
-    image: "https://images.unsplash.com/photo-1594938372620-c2d36fddbfa5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", 
+    name: "Designer Hoodie", 
+    pricePKR: 8500, 
+    priceGBP: 34, 
+    image: "./clothes.jpg", 
     category: "clothes",
-    description: "Premium designer suit for formal occasions"
-  },
-  { 
-    id: 4, 
-    name: "Aviator Sunglasses", 
-    pricePKR: 32000, 
-    priceGBP: 128, 
-    image: "https://images.unsplash.com/photo-1556306535-0f09a537f0a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", 
-    category: "glasses",
-    description: "Classic aviator sunglasses with premium lenses"
-  },
-  { 
-    id: 5, 
-    name: "Luxury Dress Watch", 
-    pricePKR: 95000, 
-    priceGBP: 380, 
-    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", 
-    category: "watches",
-    description: "Elegant dress watch for formal occasions"
-  },
-  { 
-    id: 6, 
-    name: "Designer Leather Jacket", 
-    pricePKR: 125000, 
-    priceGBP: 500, 
-    image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80", 
-    category: "clothes",
-    description: "Premium designer leather jacket"
+    description: "Premium designer hoodie for casual wear"
   }
 ];
 
 let cart = JSON.parse(localStorage.getItem('rang_cart')) || [];
-let currency = "PKR";
+let currency = localStorage.getItem('rang_currency') || "PKR";
 let isAdminLoggedIn = localStorage.getItem(ADMIN_PASSWORD_KEY) === "true";
 
-// DOM Elements
+// ==================== DOM ELEMENTS ====================
 const productList = document.querySelector(".products-container");
 const cartCount = document.getElementById("cart-count");
 const cartContainer = document.getElementById("cart-container");
@@ -74,41 +52,93 @@ const adminLoginModal = document.getElementById("admin-login-modal");
 const searchInput = document.getElementById("search-input");
 const adminStatus = document.getElementById("admin-status");
 
-// WhatsApp Business Number
-const WHATSAPP_NUMBER = "923335622988";
-
-// Initialize the page
+// ==================== INITIALIZATION ====================
 document.addEventListener("DOMContentLoaded", function() {
+  // Load theme
+  loadTheme();
+  
+  // Initialize data
   saveProductsToStorage();
   renderProducts();
   setupEventListeners();
   renderAdminProducts();
   updateAdminUI();
-  
-  // Set initial active filter
-  document.querySelector(".filter-btn.active").click();
-  
-  // Load cart count
   updateCartCount();
+  
+  // Set currency buttons
+  updateCurrencyUI();
+  
+  // Set initial filter
+  document.querySelector(".filter-btn.active")?.click();
 });
 
-// Save products to localStorage
+// ==================== THEME TOGGLE ====================
+function loadTheme() {
+  const savedTheme = localStorage.getItem('rang_theme') || 'dark';
+  document.body.setAttribute('data-theme', savedTheme);
+}
+
+function toggleTheme() {
+  const currentTheme = document.body.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  
+  document.body.setAttribute('data-theme', newTheme);
+  localStorage.setItem('rang_theme', newTheme);
+  
+  // Show notification
+  showNotification(`Switched to ${newTheme} mode`, "info");
+}
+
+// ==================== PASSWORD UTILITIES ====================
+async function hashPassword(password) {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+function togglePasswordVisibility() {
+  const passwordInput = document.getElementById("admin-password");
+  const toggleBtn = document.querySelector(".toggle-password i");
+  
+  if (passwordInput.type === "password") {
+    passwordInput.type = "text";
+    toggleBtn.classList.remove("fa-eye");
+    toggleBtn.classList.add("fa-eye-slash");
+  } else {
+    passwordInput.type = "password";
+    toggleBtn.classList.remove("fa-eye-slash");
+    toggleBtn.classList.add("fa-eye");
+  }
+}
+
+// ==================== STORAGE FUNCTIONS ====================
 function saveProductsToStorage() {
   localStorage.setItem('rang_products', JSON.stringify(products));
 }
 
-// Save cart to localStorage
 function saveCartToStorage() {
   localStorage.setItem('rang_cart', JSON.stringify(cart));
 }
 
-// Render products with category filtering
+// ==================== PRODUCT RENDERING ====================
 function renderProducts(filter = "all") {
   productList.innerHTML = "";
   
   const filteredProducts = filter === "all" 
     ? products 
     : products.filter(product => product.category === filter);
+  
+  if (filteredProducts.length === 0) {
+    productList.innerHTML = `
+      <div class="no-results" style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-tertiary);">
+        <i class="fas fa-box-open" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+        <p style="font-size: 18px;">No products found in this category</p>
+      </div>
+    `;
+    return;
+  }
   
   filteredProducts.forEach((product, index) => {
     const card = document.createElement("div");
@@ -117,12 +147,15 @@ function renderProducts(filter = "all") {
     card.setAttribute('data-name', product.name.toLowerCase());
     card.setAttribute('data-category', product.category);
     
+    const price = currency === "PKR" ? product.pricePKR : product.priceGBP;
+    const priceSymbol = currency === "PKR" ? "Rs " : "£";
+    
     card.innerHTML = `
       <div class="premium-tag">PREMIUM</div>
       <img src="${product.image}" alt="${product.name}" onerror="this.src='https://images.unsplash.com/photo-1558769132-cb1a40ed0ada?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60'">
       <h3>${product.name}</h3>
       <div class="product-category">${product.category.toUpperCase()}</div>
-      <p>${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? product.pricePKR.toLocaleString() : product.priceGBP.toFixed(2)}</p>
+      <p>${priceSymbol}${price.toLocaleString()}</p>
       <button onclick="addToCart(${product.id})">
         <i class="fas fa-shopping-bag"></i> Add to Cart
       </button>
@@ -131,7 +164,7 @@ function renderProducts(filter = "all") {
   });
 }
 
-// Setup event listeners
+// ==================== EVENT LISTENERS ====================
 function setupEventListeners() {
   // Filter buttons
   document.querySelectorAll(".filter-btn").forEach(button => {
@@ -142,23 +175,23 @@ function setupEventListeners() {
     });
   });
   
-  // Cart toggle
-  document.querySelector(".cart-toggle").addEventListener("click", toggleCart);
+  // Cart overlay
   cartOverlay.addEventListener("click", toggleCart);
   
-  // Close cart with escape key
+  // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
       closeCart();
       closeAdminPanel();
       closeLoginModal();
+      closeOrderConfirmation();
     }
   });
   
   // Checkout form
   document.getElementById("checkout-form").addEventListener("submit", handleCheckout);
   
-  // Search input
+  // Search
   searchInput.addEventListener("input", function() {
     if (this.value.length > 0) {
       searchProducts(this.value);
@@ -167,35 +200,27 @@ function setupEventListeners() {
     }
   });
   
-  // Search on Enter key
-  searchInput.addEventListener("keypress", function(e) {
-    if (e.key === "Enter") {
-      searchProducts(this.value);
-    }
-  });
-  
-  // Payment option selection
+  // Payment options
   document.querySelectorAll('.payment-option').forEach(option => {
     option.addEventListener('click', function() {
-      document.querySelectorAll('.payment-option').forEach(opt => {
-        opt.classList.remove('selected');
-      });
+      document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
       this.classList.add('selected');
+      this.querySelector('input[type="radio"]').checked = true;
     });
   });
   
-  // Admin form submission
+  // Admin form
   document.getElementById("add-product-form").addEventListener("submit", function(e) {
     e.preventDefault();
     if (isAdminLoggedIn) {
       addNewProduct();
     } else {
-      alert("Please login as admin first!");
+      showNotification("Please login as admin first!", "error");
       openLoginModal();
     }
   });
   
-  // Admin password input enter key
+  // Admin password enter key
   document.getElementById("admin-password")?.addEventListener("keypress", function(e) {
     if (e.key === "Enter") {
       adminLogin();
@@ -203,7 +228,210 @@ function setupEventListeners() {
   });
 }
 
-// ADMIN FUNCTIONS
+// ==================== CART FUNCTIONS ====================
+function addToCart(productId) {
+  const product = products.find(p => p.id === productId);
+  if (!product) return;
+  
+  const existingItem = cart.find(item => item.id === productId);
+  
+  if (existingItem) {
+    existingItem.quantity++;
+  } else {
+    cart.push({
+      ...product,
+      quantity: 1
+    });
+  }
+  
+  saveCartToStorage();
+  renderCart();
+  updateCartCount();
+  showNotification("Added to cart!", "success");
+  
+  // Open cart sidebar
+  openCart();
+}
+
+function removeFromCart(productId) {
+  cart = cart.filter(item => item.id !== productId);
+  saveCartToStorage();
+  renderCart();
+  updateCartCount();
+  showNotification("Removed from cart", "info");
+}
+
+function updateQuantity(productId, change) {
+  const item = cart.find(item => item.id === productId);
+  if (!item) return;
+  
+  item.quantity += change;
+  
+  if (item.quantity <= 0) {
+    removeFromCart(productId);
+  } else {
+    saveCartToStorage();
+    renderCart();
+    updateCartCount();
+  }
+}
+
+function clearCart() {
+  if (cart.length === 0) return;
+  
+  if (confirm("Are you sure you want to clear your cart?")) {
+    cart = [];
+    saveCartToStorage();
+    renderCart();
+    updateCartCount();
+    showNotification("Cart cleared", "info");
+  }
+}
+
+function renderCart() {
+  const cartItems = document.getElementById("cart-items");
+  const cartSubtotal = document.getElementById("cart-subtotal");
+  const cartTotal = document.getElementById("cart-total");
+  
+  if (cart.length === 0) {
+    cartItems.innerHTML = `
+      <div class="empty-cart" style="text-align: center; padding: 60px 20px; color: var(--text-tertiary);">
+        <i class="fas fa-shopping-bag" style="font-size: 64px; opacity: 0.3; margin-bottom: 20px;"></i>
+        <p style="font-size: 18px; margin-bottom: 10px;">Your cart is empty</p>
+        <p style="font-size: 14px;">Add some luxury items to get started!</p>
+      </div>
+    `;
+    cartSubtotal.textContent = currency === "PKR" ? "Rs 0" : "£0";
+    cartTotal.textContent = currency === "PKR" ? "Rs 0" : "£0";
+    return;
+  }
+  
+  cartItems.innerHTML = "";
+  let total = 0;
+  
+  cart.forEach(item => {
+    const price = currency === "PKR" ? item.pricePKR : item.priceGBP;
+    const itemTotal = price * item.quantity;
+    total += itemTotal;
+    
+    const priceSymbol = currency === "PKR" ? "Rs " : "£";
+    
+    const cartItem = document.createElement("div");
+    cartItem.className = "cart-item";
+    cartItem.innerHTML = `
+      <img src="${item.image}" alt="${item.name}">
+      <div class="cart-item-details">
+        <h4>${item.name}</h4>
+        <div class="price">${priceSymbol}${price.toLocaleString()}</div>
+        <div class="quantity-controls">
+          <button class="quantity-btn" onclick="updateQuantity(${item.id}, -1)">
+            <i class="fas fa-minus"></i>
+          </button>
+          <span class="quantity-display">${item.quantity}</span>
+          <button class="quantity-btn" onclick="updateQuantity(${item.id}, 1)">
+            <i class="fas fa-plus"></i>
+          </button>
+          <button class="remove-btn" onclick="removeFromCart(${item.id})">
+            <i class="fas fa-trash"></i> Remove
+          </button>
+        </div>
+      </div>
+    `;
+    cartItems.appendChild(cartItem);
+  });
+  
+  const priceSymbol = currency === "PKR" ? "Rs " : "£";
+  cartSubtotal.textContent = `${priceSymbol}${total.toLocaleString()}`;
+  cartTotal.textContent = `${priceSymbol}${total.toLocaleString()}`;
+}
+
+function updateCartCount() {
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  cartCount.textContent = totalItems;
+  cartCount.style.display = totalItems > 0 ? "flex" : "none";
+}
+
+function toggleCart() {
+  cartContainer.classList.toggle("show");
+  cartOverlay.classList.toggle("show");
+  if (cartContainer.classList.contains("show")) {
+    renderCart();
+  }
+}
+
+function openCart() {
+  cartContainer.classList.add("show");
+  cartOverlay.classList.add("show");
+  renderCart();
+}
+
+function closeCart() {
+  cartContainer.classList.remove("show");
+  cartOverlay.classList.remove("show");
+}
+
+// ==================== CURRENCY TOGGLE ====================
+function switchCurrency(newCurrency) {
+  currency = newCurrency;
+  localStorage.setItem('rang_currency', currency);
+  updateCurrencyUI();
+  renderProducts(document.querySelector(".filter-btn.active")?.dataset.filter || "all");
+  renderCart();
+  showNotification(`Switched to ${currency}`, "info");
+}
+
+function updateCurrencyUI() {
+  document.querySelectorAll('.currency-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.currency === currency) {
+      btn.classList.add('active');
+    }
+  });
+}
+
+// ==================== SEARCH FUNCTIONS ====================
+function searchProducts(query) {
+  const searchResults = document.getElementById("search-results");
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(query.toLowerCase()) ||
+    product.category.toLowerCase().includes(query.toLowerCase())
+  );
+  
+  searchResults.innerHTML = "";
+  
+  if (filteredProducts.length === 0) {
+    searchResults.innerHTML = '<div class="no-results">No products found</div>';
+  } else {
+    filteredProducts.forEach(product => {
+      const price = currency === "PKR" ? product.pricePKR : product.priceGBP;
+      const priceSymbol = currency === "PKR" ? "Rs " : "£";
+      
+      const resultItem = document.createElement("div");
+      resultItem.className = "search-result-item";
+      resultItem.innerHTML = `
+        <img src="${product.image}" alt="${product.name}">
+        <div class="search-result-info">
+          <h4>${product.name}</h4>
+          <p>${priceSymbol}${price.toLocaleString()}</p>
+        </div>
+      `;
+      resultItem.addEventListener("click", () => {
+        addToCart(product.id);
+        hideSearchResults();
+        searchInput.value = "";
+      });
+      searchResults.appendChild(resultItem);
+    });
+  }
+  
+  searchResults.classList.add("show");
+}
+
+function hideSearchResults() {
+  document.getElementById("search-results").classList.remove("show");
+}
+
+// ==================== ADMIN FUNCTIONS ====================
 function openLoginModal() {
   adminLoginModal.classList.add("show");
   document.getElementById("admin-password").focus();
@@ -214,10 +442,11 @@ function closeLoginModal() {
   document.getElementById("admin-password").value = "";
 }
 
-function adminLogin() {
+async function adminLogin() {
   const password = document.getElementById("admin-password").value;
+  const hashedInput = await hashPassword(password);
   
-  if (password === ADMIN_PASSWORD) {
+  if (hashedInput === ADMIN_PASSWORD_HASH) {
     isAdminLoggedIn = true;
     localStorage.setItem(ADMIN_PASSWORD_KEY, "true");
     updateAdminUI();
@@ -236,22 +465,16 @@ function logoutAdmin() {
   localStorage.removeItem(ADMIN_PASSWORD_KEY);
   updateAdminUI();
   closeAdminPanel();
-  showNotification("Logged out successfully", "success");
+  showNotification("Logged out successfully", "info");
 }
 
 function updateAdminUI() {
-  const adminLoginBtn = document.getElementById("admin-login-btn");
-  
   if (isAdminLoggedIn) {
     adminStatus.style.display = "flex";
-    adminLoginBtn.innerHTML = '<i class="fas fa-user-shield"></i>';
-    adminLoginBtn.style.color = "#D4AF37";
-    adminLoginBtn.onclick = function() { openAdminPanel(); };
+    document.getElementById("admin-login-btn").innerHTML = '<i class="fas fa-user-shield" style="color: var(--gold-primary);"></i>';
   } else {
     adminStatus.style.display = "none";
-    adminLoginBtn.innerHTML = '<i class="fas fa-user"></i>';
-    adminLoginBtn.style.color = "#ccc";
-    adminLoginBtn.onclick = function() { openLoginModal(); };
+    document.getElementById("admin-login-btn").innerHTML = '<i class="fas fa-user-shield"></i>';
   }
 }
 
@@ -261,450 +484,61 @@ function openAdminPanel() {
     return;
   }
   adminPanel.classList.add("show");
-  document.body.style.overflow = "hidden";
+  renderAdminProducts();
   loadOrders();
 }
 
 function closeAdminPanel() {
   adminPanel.classList.remove("show");
-  document.body.style.overflow = "auto";
 }
 
-// Search products
-function searchProducts(query = null) {
-  const searchQuery = query || searchInput.value.toLowerCase().trim();
-  
-  if (searchQuery.length === 0) {
-    hideSearchResults();
-    return;
-  }
-  
-  const results = products.filter(product => 
-    product.name.toLowerCase().includes(searchQuery) ||
-    product.category.toLowerCase().includes(searchQuery) ||
-    (product.description && product.description.toLowerCase().includes(searchQuery))
-  );
-  
-  displaySearchResults(results);
-}
-
-function displaySearchResults(results) {
-  const searchResults = document.getElementById("search-results");
-  searchResults.innerHTML = "";
-  
-  if (results.length === 0) {
-    searchResults.innerHTML = `
-      <div class="no-results">
-        <i class="fas fa-search"></i>
-        <p>No products found</p>
-      </div>
-    `;
-  } else {
-    results.forEach(product => {
-      const resultItem = document.createElement("div");
-      resultItem.className = "search-result-item";
-      resultItem.innerHTML = `
-        <h4>${product.name}</h4>
-        <p>${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? product.pricePKR.toLocaleString() : product.priceGBP.toFixed(2)} • ${product.category.toUpperCase()}</p>
-      `;
-      resultItem.addEventListener("click", function() {
-        addToCart(product.id);
-        hideSearchResults();
-        searchInput.value = "";
-      });
-      searchResults.appendChild(resultItem);
-    });
-  }
-  
-  searchResults.classList.add("show");
-}
-
-function hideSearchResults() {
-  document.getElementById("search-results").classList.remove("show");
-}
-
-// Cart functions
-function addToCart(id) {
-  const product = products.find(p => p.id === id);
-  if (!product) return;
-  
-  const existing = cart.find(item => item.id === id);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ ...product, quantity: 1 });
-  }
-  
-  renderCart();
-  updateCartCount();
-  saveCartToStorage();
-  showAddedToCartNotification(product.name);
-  openCart();
-}
-
-function removeFromCart(index) { 
-  cart.splice(index, 1); 
-  renderCart();
-  updateCartCount();
-  saveCartToStorage();
-}
-
-function changeQuantity(index, delta) { 
-  cart[index].quantity += delta; 
-  if (cart[index].quantity < 1) cart[index].quantity = 1; 
-  renderCart();
-  updateCartCount();
-  saveCartToStorage();
-}
-
-function toggleCart() {
-  cartContainer.classList.toggle("show");
-  cartOverlay.classList.toggle("show");
-  document.body.style.overflow = cartContainer.classList.contains("show") ? "hidden" : "auto";
-}
-
-function openCart() {
-  cartContainer.classList.add("show");
-  cartOverlay.classList.add("show");
-  document.body.style.overflow = "hidden";
-}
-
-function closeCart() {
-  cartContainer.classList.remove("show");
-  cartOverlay.classList.remove("show");
-  document.body.style.overflow = "auto";
-}
-
-function renderCart() {
-  const cartItems = document.getElementById("cart-items");
-  const subtotalPrice = document.getElementById("subtotal-price");
-  const totalPrice = document.getElementById("total-price");
-  
-  cartItems.innerHTML = "";
-  
-  if (cart.length === 0) {
-    cartItems.innerHTML = `
-      <div class="empty-cart">
-        <i class="fas fa-shopping-bag"></i>
-        <p>Your luxury cart is empty</p>
-        <p class="empty-cart-sub">Add exclusive items to begin</p>
-      </div>
-    `;
-    subtotalPrice.innerText = `${currency === "PKR" ? "Rs " : "£"}0.00`;
-    totalPrice.innerText = `${currency === "PKR" ? "Rs " : "£"}0.00`;
-    return;
-  }
-  
-  let subtotal = 0;
-  
-  cart.forEach((item, index) => {
-    const price = currency === "PKR" ? item.pricePKR : item.priceGBP;
-    subtotal += price * item.quantity;
-    
-    const itemDiv = document.createElement("div");
-    itemDiv.className = "cart-item";
-    itemDiv.style.animationDelay = `${index * 0.05}s`;
-    
-    itemDiv.innerHTML = `
-      <img src="${item.image}" class="cart-item-img" onerror="this.src='https://images.unsplash.com/photo-1558769132-cb1a40ed0ada?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=60'">
-      <div class="cart-item-info">
-        <span class="cart-item-name">${item.name}</span>
-        <span class="cart-item-price">${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? (price * item.quantity).toLocaleString() : (price * item.quantity).toFixed(2)}</span>
-        <div class="quantity-control">
-          <button onclick="changeQuantity(${index}, -1)">-</button>
-          <span>${item.quantity}</span>
-          <button onclick="changeQuantity(${index}, 1)">+</button>
-        </div>
-      </div>
-      <button onclick="removeFromCart(${index})" class="remove-btn">
-        <i class="fas fa-trash"></i>
-      </button>
-    `;
-    cartItems.appendChild(itemDiv);
-  });
-  
-  const total = subtotal; // Free shipping, no additional cost
-  
-  subtotalPrice.innerText = `${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? subtotal.toLocaleString() : subtotal.toFixed(2)}`;
-  totalPrice.innerText = `${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? total.toLocaleString() : total.toFixed(2)}`;
-}
-
-function updateCartCount() {
-  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-  cartCount.innerText = count;
-  cartCount.style.display = count > 0 ? "flex" : "none";
-}
-
-function switchCurrency(newCurrency) {
-  currency = newCurrency;
-  
-  // Update active button
-  document.querySelectorAll(".currency-btn").forEach(btn => btn.classList.remove("active"));
-  event.target.classList.add("active");
-  
-  // Update product prices
-  const activeFilter = document.querySelector(".filter-btn.active").dataset.filter;
-  renderProducts(activeFilter);
-  
-  // Update cart
-  renderCart();
-  
-  // Update search results if visible
-  if (document.getElementById("search-results").classList.contains("show")) {
-    searchProducts();
-  }
-}
-
-function showAddedToCartNotification(productName) {
-  // Create notification element
-  const notification = document.createElement("div");
-  notification.className = "notification";
-  notification.innerHTML = `
-    <i class="fas fa-check-circle"></i>
-    <span>${productName} added to cart</span>
-  `;
-  
-  // Style the notification
-  notification.style.cssText = `
-    position: fixed;
-    top: 100px;
-    right: 20px;
-    background: #1a1a1a;
-    color: #D4AF37;
-    padding: 15px 20px;
-    border-radius: 8px;
-    border-left: 4px solid #D4AF37;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    z-index: 10000;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
-  `;
-  
-  // Add to DOM
-  document.body.appendChild(notification);
-  
-  // Remove after 3 seconds
-  setTimeout(() => {
-    notification.remove();
-  }, 3000);
-}
-
-// Add CSS for notification animation
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  @keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
-  }
-`;
-document.head.appendChild(style);
-
-// WhatsApp Order Function - FIXED VERSION
-function sendOrderViaWhatsApp() {
-  if (cart.length === 0) {
-    alert("Your cart is empty! Add some luxury items before checking out.");
-    return;
-  }
-  
-  if (!document.getElementById("terms").checked) {
-    alert("Please agree to the Terms & Conditions and Privacy Policy to proceed.");
-    return;
-  }
-  
-  // Collect form data
-  const firstName = document.getElementById("first-name").value.trim();
-  const lastName = document.getElementById("last-name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const address = document.getElementById("address").value.trim();
-  const city = document.getElementById("city").value.trim();
-  const postal = document.getElementById("postal").value.trim();
-  const contact = document.getElementById("contact").value.trim();
-  
-  // Validate required fields
-  if (!firstName || !lastName || !phone || !address || !city) {
-    alert("Please fill in all required fields: First Name, Last Name, Phone, Address, and City.");
-    return;
-  }
-  
-  // Validate phone number (Pakistani format)
-  const phoneRegex = /^03[0-9]{9}$/;
-  if (!phoneRegex.test(phone.replace(/-/g, ''))) {
-    alert("Please enter a valid Pakistani phone number (e.g., 03XXXXXXXXX)");
-    return;
-  }
-  
-  // Calculate total
-  let subtotal = cart.reduce((sum, item) => sum + (currency === "PKR" ? item.pricePKR : item.priceGBP) * item.quantity, 0);
-  const total = subtotal; // Free shipping
-  
-  // Build order items string
-  let itemsString = "";
-  cart.forEach((item, index) => {
-    itemsString += `➤ ${item.quantity}x ${item.name} - ${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? item.pricePKR.toLocaleString() : item.priceGBP.toFixed(2)} each\n`;
-  });
-  
-  // Build WhatsApp message
-  const orderId = "RANG" + Date.now().toString().substr(-6);
-  const message = `🛍️ *NEW ORDER - رنگ Luxury Store*\n\n` +
-                  `*Order ID:* ${orderId}\n` +
-                  `*Date:* ${new Date().toLocaleString()}\n\n` +
-                  `*👤 Customer Details:*\n` +
-                  `Name: ${firstName} ${lastName}\n` +
-                  `Phone: ${phone}\n` +
-                  `Email/Contact: ${contact || "Not provided"}\n` +
-                  `Address: ${address}\n` +
-                  `City: ${city}${postal ? ` (${postal})` : ''}\n\n` +
-                  `*🛒 Order Items:*\n${itemsString}\n` +
-                  `*💰 Order Summary:*\n` +
-                  `Subtotal: ${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? subtotal.toLocaleString() : subtotal.toFixed(2)}\n` +
-                  `Shipping: FREE (2-4 Days)\n` +
-                  `*Total: ${currency === "PKR" ? "Rs " : "£"}${currency === "PKR" ? total.toLocaleString() : total.toFixed(2)}*\n\n` +
-                  `*Payment Method:* Customer will confirm via WhatsApp\n` +
-                  `*Delivery:* All over Pakistan\n\n` +
-                  `_This order was placed via رنگ Luxury Website_`;
-  
-  // Encode message for URL - PROPERLY encoded
-  const encodedMessage = encodeURIComponent(message);
-  
-  // Create WhatsApp URL - FIXED FORMAT
-  const whatsappURL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
-  
-  // Save order to localStorage before redirecting
-  const orderData = {
-    id: orderId,
-    timestamp: new Date().toISOString(),
-    customer: { firstName, lastName, phone, contact, address, city, postal },
-    items: cart.map(item => ({ 
-      name: item.name, 
-      quantity: item.quantity, 
-      price: currency === "PKR" ? item.pricePKR : item.priceGBP 
-    })),
-    total: total,
-    currency: currency,
-    status: "pending"
-  };
-  
-  // Save to localStorage
-  saveOrderToStorage(orderData);
-  
-  // Show confirmation before redirecting
-  const confirmRedirect = confirm(
-    `Your order (${orderId}) is ready to be sent via WhatsApp.\n\n` +
-    `Click OK to open WhatsApp and send this order to +${WHATSAPP_NUMBER}.\n\n` +
-    `After sending, our team will contact you for payment confirmation.`
-  );
-  
-  if (confirmRedirect) {
-    // Clear cart
-    cart = [];
-    renderCart();
-    updateCartCount();
-    saveCartToStorage();
-    
-    // Reset form
-    document.getElementById("checkout-form").reset();
-    
-    // Close cart
-    closeCart();
-    
-    // Open WhatsApp in new tab - THIS IS THE FIX
-    window.open(whatsappURL, '_blank', 'noopener,noreferrer');
-    
-    // Show thank you message
-    setTimeout(() => {
-      alert(`Thank you for your order! Order ID: ${orderId}\n\nOur team will contact you within 1 hour to confirm your order.`);
-    }, 1000);
-  }
-}
-
-// Function to save orders to localStorage
-function saveOrderToStorage(order) {
-  const orders = JSON.parse(localStorage.getItem('rang_orders')) || [];
-  orders.push(order);
-  localStorage.setItem('rang_orders', JSON.stringify(orders));
-}
-
-// Admin Panel Functions
 function addNewProduct() {
-  const name = document.getElementById("admin-product-name").value.trim();
+  const name = document.getElementById("admin-product-name").value;
   const category = document.getElementById("admin-product-category").value;
-  const pricePKR = parseInt(document.getElementById("admin-price-pkr").value);
-  const priceGBP = parseInt(document.getElementById("admin-price-gbp").value);
-  const image = document.getElementById("admin-product-image").value.trim();
-  const description = document.getElementById("admin-product-description").value.trim();
-  
-  if (!name || !image || isNaN(pricePKR) || isNaN(priceGBP)) {
-    showNotification("Please fill all required fields with valid data!", "error");
-    return;
-  }
-  
-  // Generate new ID
-  const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+  const pricePKR = parseFloat(document.getElementById("admin-price-pkr").value);
+  const priceGBP = parseFloat(document.getElementById("admin-price-gbp").value);
+  const image = document.getElementById("admin-product-image").value;
+  const description = document.getElementById("admin-product-description").value;
   
   const newProduct = {
-    id: newId,
+    id: Date.now(),
     name,
+    category,
     pricePKR,
     priceGBP,
     image,
-    category,
-    description: description || "Premium luxury product"
+    description
   };
   
   products.push(newProduct);
   saveProductsToStorage();
+  renderProducts(document.querySelector(".filter-btn.active")?.dataset.filter || "all");
   renderAdminProducts();
-  
-  // Update the main product display
-  const activeFilter = document.querySelector(".filter-btn.active").dataset.filter;
-  renderProducts(activeFilter);
-  
-  // Reset form
   document.getElementById("add-product-form").reset();
-  
   showNotification("Product added successfully!", "success");
 }
 
-function removeProduct(id) {
-  if (!isAdminLoggedIn) {
-    showNotification("Please login as admin first!", "error");
-    return;
-  }
+function removeProduct(productId) {
+  if (!isAdminLoggedIn) return;
   
-  if (confirm("Are you sure you want to delete this product?")) {
-    products = products.filter(product => product.id !== id);
+  if (confirm("Are you sure you want to remove this product?")) {
+    products = products.filter(p => p.id !== productId);
     saveProductsToStorage();
+    renderProducts(document.querySelector(".filter-btn.active")?.dataset.filter || "all");
     renderAdminProducts();
-    
-    // Update the main product display
-    const activeFilter = document.querySelector(".filter-btn.active").dataset.filter;
-    renderProducts(activeFilter);
-    
-    // Also remove from cart if present
-    cart = cart.filter(item => item.id !== id);
-    saveCartToStorage();
-    renderCart();
-    updateCartCount();
-    
-    showNotification("Product removed successfully!", "success");
+    showNotification("Product removed", "info");
   }
 }
 
 function renderAdminProducts() {
   const adminProductsList = document.getElementById("admin-products-list");
-  adminProductsList.innerHTML = "";
   
   if (products.length === 0) {
-    adminProductsList.innerHTML = `<p class="no-results">No products added yet</p>`;
+    adminProductsList.innerHTML = '<p class="no-results">No products added yet</p>';
     return;
   }
   
+  adminProductsList.innerHTML = "";
   products.forEach(product => {
     const productItem = document.createElement("div");
     productItem.className = "admin-product-item";
@@ -719,7 +553,7 @@ function renderAdminProducts() {
   });
 }
 
-// Order Management Functions
+// ==================== ORDER MANAGEMENT ====================
 function loadOrders() {
   const orders = JSON.parse(localStorage.getItem('rang_orders')) || [];
   const ordersList = document.getElementById('orders-list');
@@ -731,7 +565,6 @@ function loadOrders() {
     return;
   }
   
-  // Sort by date (newest first)
   orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
   orders.forEach(order => {
@@ -749,6 +582,7 @@ function loadOrders() {
       </div>
       <div class="order-details">
         <p><strong>Customer:</strong> ${order.customer.firstName} ${order.customer.lastName}</p>
+        <p><strong>Email:</strong> ${order.customer.contact}</p>
         <p><strong>Phone:</strong> ${order.customer.phone}</p>
         <p><strong>Items:</strong> ${itemsList}</p>
         <p><strong>Total:</strong> ${order.currency === 'PKR' ? 'Rs ' : '£'}${order.total.toLocaleString()}</p>
@@ -767,10 +601,10 @@ function loadOrders() {
         <button onclick="viewOrderDetails('${order.id}')" class="order-action-btn">
           <i class="fas fa-eye"></i> View
         </button>
-        <button onclick="contactCustomer('${order.customer.phone}')" class="order-action-btn" style="background: #25D366;">
+        <button onclick="contactCustomer('${order.customer.phone}')" class="order-action-btn" style="background: #25D366; color: #fff;">
           <i class="fab fa-whatsapp"></i> WhatsApp
         </button>
-        <button onclick="deleteOrder('${order.id}')" class="order-action-btn" style="background: #f44336;">
+        <button onclick="deleteOrder('${order.id}')" class="order-action-btn" style="background: #f44336; color: #fff;">
           <i class="fas fa-trash"></i> Delete
         </button>
       </div>
@@ -823,11 +657,8 @@ Total: ${order.currency === 'PKR' ? 'Rs ' : '£'}${order.total}
 }
 
 function contactCustomer(phoneNumber) {
-  // Create proper WhatsApp URL for customer contact
   const message = encodeURIComponent("Hello from رنگ Luxury Store! Regarding your order...");
   const whatsappURL = `https://wa.me/${phoneNumber}?text=${message}`;
-  
-  // Open in new tab
   window.open(whatsappURL, '_blank', 'noopener,noreferrer');
 }
 
@@ -846,35 +677,39 @@ function deleteOrder(orderId) {
   }
 }
 
-function handleCheckout(e) {
+// ==================== CHECKOUT FUNCTIONS ====================
+async function handleCheckout(e) {
   e.preventDefault();
   
   if (cart.length === 0) {
-    alert("Your cart is empty! Add some luxury items before checking out.");
+    showNotification("Your cart is empty!", "error");
     return;
   }
   
   if (!document.getElementById("terms").checked) {
-    alert("Please agree to the Terms & Conditions and Privacy Policy to proceed.");
+    showNotification("Please agree to the Terms & Conditions", "error");
     return;
   }
   
-  // Get selected payment method
   const selectedPayment = document.querySelector('input[name="payment"]:checked');
   if (!selectedPayment) {
-    alert("Please select a payment method.");
+    showNotification("Please select a payment method", "error");
     return;
   }
   
-  const formData = {
-    contact: document.getElementById("contact").value,
-    firstName: document.getElementById("first-name").value,
-    lastName: document.getElementById("last-name").value,
-    address: document.getElementById("address").value,
-    city: document.getElementById("city").value,
-    postal: document.getElementById("postal").value,
-    phone: document.getElementById("phone").value,
-    shipping: "free",
+  const orderData = {
+    id: "RANG" + Date.now().toString().substr(-8),
+    timestamp: new Date().toISOString(),
+    status: "pending",
+    customer: {
+      contact: document.getElementById("contact").value,
+      firstName: document.getElementById("first-name").value,
+      lastName: document.getElementById("last-name").value,
+      address: document.getElementById("address").value,
+      city: document.getElementById("city").value,
+      postal: document.getElementById("postal").value,
+      phone: document.getElementById("phone").value,
+    },
     payment: selectedPayment.value,
     currency: currency,
     items: cart.map(item => ({
@@ -885,12 +720,27 @@ function handleCheckout(e) {
     total: cart.reduce((sum, item) => sum + (currency === "PKR" ? item.pricePKR : item.priceGBP) * item.quantity, 0)
   };
   
-  // Calculate shipping cost (free)
-  formData.shippingCost = 0;
-  formData.total += formData.shippingCost;
+  // Save order
+  const orders = JSON.parse(localStorage.getItem('rang_orders')) || [];
+  orders.push(orderData);
+  localStorage.setItem('rang_orders', JSON.stringify(orders));
   
-  // Show success message
-  const orderId = "RANG" + Date.now().toString().substr(-8);
+  // Send email notifications
+  await sendOrderEmails(orderData);
+  
+  // Show confirmation
+  showOrderConfirmation(orderData);
+  
+  // Reset
+  cart = [];
+  saveCartToStorage();
+  renderCart();
+  updateCartCount();
+  e.target.reset();
+  closeCart();
+}
+
+async function sendOrderEmails(orderData) {
   const paymentMethods = {
     'card': 'Credit/Debit Card',
     'cod': 'Cash on Delivery',
@@ -898,42 +748,170 @@ function handleCheckout(e) {
     'jazzcash': 'JazzCash'
   };
   
-  alert(`✅ Order Submitted Successfully!\n\nOrder ID: ${orderId}\nTotal: ${currency === "PKR" ? "Rs " : "£"}${formData.total.toLocaleString()}\nPayment Method: ${paymentMethods[formData.payment]}\n\nOur representative will contact you shortly to confirm your order. Thank you for choosing رنگ!`);
+  const itemsList = orderData.items.map(item => 
+    `- ${item.quantity}x ${item.name} (${orderData.currency === 'PKR' ? 'Rs' : '£'}${item.price.toLocaleString()} each)`
+  ).join('\n');
   
-  // Reset cart and form
-  cart = [];
-  renderCart();
-  updateCartCount();
-  saveCartToStorage();
-  e.target.reset();
-  closeCart();
+  const emailSubject = `Order Confirmation - ${orderData.id}`;
+  const emailBody = `
+Order Confirmation - رنگ Luxury Store
+
+Order ID: ${orderData.id}
+Date: ${new Date(orderData.timestamp).toLocaleString()}
+
+Customer Information:
+Name: ${orderData.customer.firstName} ${orderData.customer.lastName}
+Email: ${orderData.customer.contact}
+Phone: ${orderData.customer.phone}
+Address: ${orderData.customer.address}, ${orderData.customer.city}${orderData.customer.postal ? ' ' + orderData.customer.postal : ''}
+
+Order Details:
+${itemsList}
+
+Payment Method: ${paymentMethods[orderData.payment]}
+Total: ${orderData.currency === 'PKR' ? 'Rs' : '£'}${orderData.total.toLocaleString()}
+
+Status: ${orderData.status.toUpperCase()}
+
+Thank you for shopping with رنگ Luxury Store!
+We will contact you shortly to confirm your order.
+
+Contact us:
+Phone: 0333-5622988 / 0334-5422018
+WhatsApp: https://wa.me/923335622988
+  `;
+  
+  // Send to customer
+  window.open(`mailto:${orderData.customer.contact}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`);
+  
+  // Send to admins
+  setTimeout(() => {
+    window.open(`mailto:${ADMIN_EMAIL_1},${ADMIN_EMAIL_2}?subject=${encodeURIComponent('New Order: ' + orderData.id)}&body=${encodeURIComponent(emailBody)}`);
+  }, 1000);
 }
 
-// Notification function
+function showOrderConfirmation(orderData) {
+  const modal = document.getElementById("order-confirmation-modal");
+  const details = document.getElementById("order-details");
+  
+  const paymentMethods = {
+    'card': 'Credit/Debit Card',
+    'cod': 'Cash on Delivery',
+    'bank': 'Bank Transfer',
+    'jazzcash': 'JazzCash'
+  };
+  
+  details.innerHTML = `
+    <strong>Order ID:</strong> ${orderData.id}<br>
+    <strong>Total:</strong> ${orderData.currency === 'PKR' ? 'Rs' : '£'}${orderData.total.toLocaleString()}<br>
+    <strong>Payment:</strong> ${paymentMethods[orderData.payment]}<br><br>
+    Our representative will contact you shortly to confirm your order.
+  `;
+  
+  modal.classList.add("show");
+}
+
+function closeOrderConfirmation() {
+  document.getElementById("order-confirmation-modal").classList.remove("show");
+}
+
+// ==================== WHATSAPP ORDER ====================
+function sendOrderViaWhatsApp() {
+  if (cart.length === 0) {
+    showNotification("Your cart is empty!", "error");
+    return;
+  }
+  
+  const itemsList = cart.map(item => {
+    const price = currency === "PKR" ? item.pricePKR : item.priceGBP;
+    return `${item.quantity}x ${item.name} - ${currency === "PKR" ? "Rs" : "£"}${price.toLocaleString()}`;
+  }).join('\n');
+  
+  const total = cart.reduce((sum, item) => sum + (currency === "PKR" ? item.pricePKR : item.priceGBP) * item.quantity, 0);
+  
+  const message = `
+🛍️ *New Order from رنگ Luxury Store*
+
+*Order Details:*
+${itemsList}
+
+*Total:* ${currency === "PKR" ? "Rs" : "£"}${total.toLocaleString()}
+
+*Customer Information:*
+Name: ${document.getElementById("first-name")?.value} ${document.getElementById("last-name")?.value}
+Phone: ${document.getElementById("phone")?.value}
+Email: ${document.getElementById("contact")?.value}
+Address: ${document.getElementById("address")?.value}, ${document.getElementById("city")?.value}
+
+I would like to place this order. Thank you!
+  `;
+  
+  const whatsappURL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappURL, '_blank', 'noopener,noreferrer');
+}
+
+// ==================== NOTIFICATIONS ====================
 function showNotification(message, type = "success") {
   const notification = document.createElement('div');
-  const bgColor = type === "success" ? "#25D366" : type === "error" ? "#f44336" : "#D4AF37";
+  
+  const colors = {
+    success: '#4CAF50',
+    error: '#f44336',
+    info: 'var(--gold-primary)',
+  };
+  
+  const icons = {
+    success: 'check-circle',
+    error: 'exclamation-circle',
+    info: 'info-circle'
+  };
   
   notification.style.cssText = `
     position: fixed;
     top: 20px;
     right: 20px;
-    background: ${bgColor};
+    background: ${colors[type]};
     color: white;
-    padding: 15px 20px;
-    border-radius: 8px;
+    padding: 16px 24px;
+    border-radius: 12px;
     z-index: 9999;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    font-weight: 600;
     animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
   `;
   
-  notification.innerHTML = `<i class="fas fa-${type === "success" ? "check-circle" : "exclamation-circle"}"></i> ${message}`;
+  notification.innerHTML = `<i class="fas fa-${icons[type]}"></i> ${message}`;
   document.body.appendChild(notification);
   
   setTimeout(() => {
     notification.remove();
   }, 3000);
 }
+
+// ==================== CSS ANIMATIONS ====================
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(100px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+`;
+document.head.appendChild(style);
